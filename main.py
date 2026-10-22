@@ -22,17 +22,19 @@ my_posts = [
         {"title" : "favorite foods", "content": "I like pizza", "id": 2}
 ]
 
-def find_post(id):
+def find_post_id(id):
     for p in my_posts:
         if p["id"] == id:
             return p
 
     return None
 
-def delete_post(id):
-    for p in my_posts:
+
+def find_post_index(id:int):
+    for i , p in enumerate(my_posts):
         if p["id"] == id:
-            del p
+            return i
+    return None
 
 #this is a path or route 
 @app.get("/")
@@ -61,7 +63,7 @@ def latest_post(res : Response):
 @app.get("/posts/{id}")
 def get_post(id : int, res : Response):
     
-    post = find_post(id)
+    post = find_post_id (id)
 
     if not post:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail= f"post with id {id} was not found")
@@ -80,12 +82,31 @@ def create_posts(post : Post): #based on the schema provided
     return {"data" : new_post}
 
 
-@app.delete("/posts/{id}" , status_code=status.HTTP_200_OK)
+@app.delete("/posts/{id}" , status_code=status.HTTP_204_NO_CONTENT)
 def delete(id: int):
-    delete_post(id)
-    return {"data" : "deleted"}
+    index = find_post_index(id)
 
- 
+    if index == None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail= f"post with id {id} does not exist")
+    my_posts.pop(index) #deletion is happening here
 
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+
+
+@app.put("/posts/{id}" , status_code=status.HTTP_201_CREATED)
+def update_post(id:int, post: Post):###taken 
+    
+    index = find_post_index(id)
+    
+    if index == None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail= f"post with id {id} does not exist")
+
+    post_dict = post.dict()###using here
+    post_dict['id'] = id
+    my_posts[index] = post_dict
+
+    return {"data" : post_dict }
 
    
