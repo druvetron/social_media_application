@@ -3,6 +3,8 @@ from fastapi.params import Body
 from pydantic import BaseModel
 from typing import Optional
 from random import randrange
+import psycopg2
+from psycopg2.extras import RealDictCursor
 
 app = FastAPI() # ' app ' is the instance 
 
@@ -13,14 +15,26 @@ class Post(BaseModel):
     title : str
     content : str
     published  : bool = True #defaults to true 
-    rating : Optional[int] = None
+
+    
+try:
+    conn = psycopg2.connect(host = 'localhost' , database = 'fastapi' , user = 'postgres' , password= 'bruse12345'
+                            , cursor_factory=RealDictCursor)
+
+    cursor = conn.cursor()
+    print(" - - - - - - - - - - -----sucessfully connected to database---- -  - - - - - - - - - - ")
+
+except Exception as e:
+    print("oops!!!!connection failed!!!!!")
+    print("error:", e)
+
 
 
 #db as of now in memory 
-my_posts = [
-    {"title" : "title of post 1", "content": "content of post 1", "id": 1}, 
-        {"title" : "favorite foods", "content": "I like pizza", "id": 2}
-]
+# my_posts = [
+#     {"title" : "title of post 1", "content": "content of post 1", "id": 1}, 
+#         {"title" : "favorite foods", "content": "I like pizza", "id": 2}
+# ]
 
 def find_post_id(id):
     for p in my_posts:
@@ -44,11 +58,14 @@ def root():
 
 
 
-
+####
 @app.get("/posts")
 def get_posts():
-    return {"data ": my_posts}
-
+    cursor.execute("select * from posts ")
+    posts =  cursor.fetchall()
+   
+    return {"data ": posts}
+####
 
 @app.get("/posts/latest")
 def latest_post(res : Response):
@@ -75,10 +92,15 @@ def get_post(id : int, res : Response):
 
 @app.post("/posts", status_code=status.HTTP_201_CREATED)
 def create_posts(post : Post): #based on the schema provided
+    cursor.execute("""insert into posts (title , content, published) values (%s,%s,%s) RETURNING * ; """,
+                   (post.title,
+                    post.content,
+                    post.published ))
 
-    new_post = post.dict()
-    new_post["id"] = randrange(0, 100)
-    my_posts.append(new_post)
+    new_post = cursor.fetchone()
+
+    conn.commit() #this actually push the changes into my database 
+    
     return {"data" : new_post}
 
 
