@@ -16,6 +16,7 @@ Base = declarative_base()
 ##
 
 #will call this fun everytime we get a req on our api endpoint
+#this is a working function
 def get_db():
     db  = SessionLocal()
     try:
