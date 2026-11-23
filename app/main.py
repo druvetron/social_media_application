@@ -1,12 +1,20 @@
-from fastapi import FastAPI, Response, status, HTTPException
+from fastapi import FastAPI, Response, status, HTTPException, Depends
 from fastapi.params import Body
 from pydantic import BaseModel
 from typing import Optional
 from random import randrange
 import psycopg2
-from psycopg2.extras import RealDictCursor
+from psycopg2.extras import RealDictCursor 
+from  sqlalchemy.orm import session
+from . import models
+from .database import engine, get_db
+
+
+models.Base.metadata.create_all(bind = engine) #should create a table in postgres
 
 app = FastAPI() # ' app ' is the instance 
+
+
 
 #class/pydantic model for a post
 #schmea for our post
@@ -36,7 +44,7 @@ except Exception as e:
 #         {"title" : "favorite foods", "content": "I like pizza", "id": 2}
 # ]
 
-
+#aaj ka change
 
 
 def find_post_index(id:int):
@@ -50,7 +58,9 @@ def find_post_index(id:int):
 def root():
     return {"message": "you are on the root url "}
 
-
+@app.get("/sqlalchemy")
+def test_posts(db: session = Depends(get_db)):
+    return {"status" : "success"}
 
 
 
